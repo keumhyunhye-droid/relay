@@ -179,8 +179,14 @@ export default function App() {
   }
 
   return (
-    <main className="min-h-screen bg-black flex justify-center items-start">
-      <div className="relative w-[500px] h-[667px] bg-[#252525] text-white overflow-hidden">
+    <main className="w-screen h-[100dvh] bg-black overflow-hidden flex items-center justify-center">
+  <div
+    style={{
+      width: 'min(100vw, calc(100dvh * 1668 / 2224))',
+      aspectRatio: '1668 / 2224',
+    }}
+    className="relative bg-[#252525] text-white overflow-hidden"
+  >
       {page === 'home' ? (
   <HomePage
     setPage={setPage}
@@ -266,9 +272,11 @@ function HomePage({
 
       <div className="relative z-10 px-8 pt-13 pb-8">
         <section className="text-center">
-          <h1 className="text-[78px] leading-none font-black tracking-[-3px]">
-            RE<span className="text-[#9cff5a] italic">L</span>AY!
-          </h1>
+        <img
+  src="/relay-logo.png"
+  alt="RELAY"
+  className="mx-auto w-[330px] h-auto"
+/>
 
           <p className="mt-7 text-[13px] leading-[1.6] text-gray-300 font-medium">
           쉽고 빠른 재료 순환 플랫폼, Relay!
@@ -1174,59 +1182,111 @@ function PickupScanPage({ setPage, material, handlePickupComplete }) {
   )
 }
 function GuidePage({ setPage }) {
-  const guides = [
-    {
-      image: '/guide1.png',
-      text: 'STEP 01 — 재료를 종류별로 찾아보고, 원하는 재료를 검색해요.',
-    },
-    {
-      image: '/guide2.png',
-      text: 'STEP 02 — 표시된 슬롯 번호를 따라 실제 공유함에서 재료의 크기를 직접 확인해요.',
-    },
-    {
-      image: '/guide3.png',
-      text: 'STEP 03 — 재료에 부착된 바코드를 스캔하면 수령이 완료돼요.',
-    },
-    {
-      image: '/guide4.png',
-      text: 'STEP 04 — 작업 후 남은 재료는 공유함에 다시 보관해요.',
-    },
-  ]
+  const [guideMode, setGuideMode] = useState('menu')
 
-  return (
-    <div className="w-full h-full bg-[#2d2d2d] pb-15 text-white px-8 pt-8 overflow-y-auto [&::-webkit-scrollbar]:hidden">
-      <header className="relative flex items-center justify-center">
-        <button
-          onClick={() => setPage('home')}
-          className="absolute left-0 text-[#9cff5a] text-[28px] leading-none"
-        >
-          ←
-        </button>
+  if (guideMode === 'menu') {
+    return (
+      <div className="relative w-full h-full bg-[#2d2d2d] text-white overflow-hidden px-8 pt-8">
+        <div className="absolute -top-20 -left-24 w-[280px] h-[280px] bg-[#9cff5a]/20 blur-[85px] rounded-full" />
 
-        <h1 className="text-[#9cff5a] text-[20px] font-black">
-          이용방법
-        </h1>
-      </header>
+        <header className="relative z-10 flex items-center justify-center">
+          <button
+            type="button"
+            onClick={() => setPage('home')}
+            className="absolute left-0 text-[#9cff5a] text-[28px] leading-none"
+          >
+            ←
+          </button>
 
-      <section className="mt-[110px] grid grid-cols-2 gap-x-7 gap-y-12">
-        {guides.map((guide, index) => (
-          <div key={index}>
-            <div className="w-full aspect-square rounded-[12px] border border-white overflow-hidden">
-              <img
-                src={guide.image}
-                alt=""
-                className="w-full h-full object-cover"
-              />
-            </div>
+          <h1 className="text-[#9cff5a] text-[22px] font-black">
+            이용방법
+          </h1>
+        </header>
 
-            <p className="mt-3 text-[11px] leading-[18px] text-white/90">
-              {guide.text}
-            </p>
+        <section className="relative z-10 h-full flex flex-col items-center justify-center pb-12">
+        <img
+  src="/relay-logo.png"
+  alt="RELAY"
+  className="mx-auto w-[520px] max-w-[80%] h-auto object-contain"
+/>
+
+          <div className="mt-[150px] w-full space-y-7">
+            <button
+              type="button"
+              onClick={() => setGuideMode('register')}
+              className="w-full h-[84px] rounded-full bg-[#9cff5a] text-black text-[28px] font-black shadow-[0_12px_35px_rgba(156,255,90,0.22)]"
+            >
+              재료 등록하기
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setGuideMode('pickup')}
+              className="w-full h-[84px] rounded-full bg-[#9cff5a] text-black text-[28px] font-black shadow-[0_12px_35px_rgba(156,255,90,0.22)]"
+            >
+              재료 가져가기
+            </button>
           </div>
-        ))}
-      </section>
-    </div>
-  )
+        </section>
+      </div>
+    )
+  }
+
+  if (guideMode === 'pickup') {
+    return (
+      <div className="relative w-full h-full bg-[#2d2d2d] text-white overflow-y-auto overflow-x-hidden px-8 pt-8 pb-12 [&::-webkit-scrollbar]:hidden">
+        <header className="relative flex items-center justify-center">
+          <button
+            type="button"
+            onClick={() => setGuideMode('menu')}
+            className="absolute left-0 text-[#9cff5a] text-[28px] leading-none"
+          >
+            ←
+          </button>
+
+          <h1 className="text-[#9cff5a] text-[22px] font-black">
+            재료 가져가기
+          </h1>
+        </header>
+
+        <section className="mt-[90px] bg-white rounded-[24px] overflow-hidden p-3">
+          <img
+            src="/guide-pickup.png"
+            alt="재료 가져가기 이용방법"
+            className="w-full h-auto block"
+          />
+        </section>
+      </div>
+    )
+  }
+
+  if (guideMode === 'register') {
+    return (
+      <div className="relative w-full h-full bg-[#2d2d2d] text-white overflow-y-auto overflow-x-hidden px-8 pt-8 pb-12 [&::-webkit-scrollbar]:hidden">
+        <header className="relative flex items-center justify-center">
+          <button
+            type="button"
+            onClick={() => setGuideMode('menu')}
+            className="absolute left-0 text-[#9cff5a] text-[28px] leading-none"
+          >
+            ←
+          </button>
+
+          <h1 className="text-[#9cff5a] text-[22px] font-black">
+            재료 등록하기
+          </h1>
+        </header>
+
+        <section className="mt-[90px] bg-white rounded-[24px] overflow-hidden p-3">
+          <img
+            src="/guide-register.png"
+            alt="재료 등록하기 이용방법"
+            className="w-full h-auto block"
+          />
+        </section>
+      </div>
+    )
+  }
 }
 
 function Label({ text }) {
