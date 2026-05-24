@@ -167,7 +167,7 @@ export default function App() {
     })
 
     setSelectedCategory('전체')
-    setPage('success')
+    setPage('savedInfo')
   }
   const handlePickupComplete = (target) => {
     setMaterials((prev) =>
@@ -197,6 +197,40 @@ export default function App() {
     setSelectedCategory={setSelectedCategory}
     setSelectedMaterial={setSelectedMaterial}
   />
+
+  ) : page === 'registerGuide' ? (
+  <RegisterGuidePage setPage={setPage} />
+) : page === 'pickupGuide' ? (
+  <PickupGuidePage setPage={setPage} />
+) : page === 'pickupList' ? (
+  <PickupListPage
+    setPage={setPage}
+    materials={filteredMaterials}
+    selectedCategory={selectedCategory}
+    setSelectedCategory={setSelectedCategory}
+    setSelectedMaterial={setSelectedMaterial}
+    scrollRef={scrollRef}
+    handleWheel={handleWheel}
+  />
+
+) : page === 'savedInfo' ? (
+  <SavedInfoPage setPage={setPage} />
+) : page === 'barcodeAttach' ? (
+  <BarcodeAttachPage
+    setPage={setPage}
+    savedMaterial={savedMaterial}
+  />
+) : page === 'scan' ? (
+  <ScanPage
+    setPage={setPage}
+    savedMaterial={savedMaterial}
+  />
+) : page === 'final' ? (
+  <FinalPage
+    setPage={setPage}
+    savedMaterial={savedMaterial}
+  />
+
 ) : page === 'register' ? (
   <RegisterPage
     setPage={setPage}
@@ -256,90 +290,255 @@ function getDDay(createdAt) {
     : '만료'
 }
 
-function HomePage({
-  setPage,
-  scrollRef,
-  handleWheel,
-  materials,
-  selectedCategory,
-  setSelectedCategory,
-  setSelectedMaterial,
-}) {
+function HomePage({ setPage }) {
   return (
-    <div className="relative w-full h-full overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-      <div className="absolute -top-20 -left-24 w-[280px] h-[280px] bg-[#9cff5a]/25 blur-[85px] rounded-full" />
-      <div className="absolute bottom-[-80px] right-[-90px] w-[340px] h-[340px] bg-[#9cff5a]/25 blur-[90px] rounded-full" />
+    <div className="relative w-full h-full overflow-hidden bg-[#303030] text-white">
+      <div className="absolute -top-20 -left-24 w-[360px] h-[360px] bg-[#9cff5a]/25 blur-[100px] rounded-full" />
+      <div className="absolute bottom-[-90px] right-[-80px] w-[420px] h-[420px] bg-[#9cff5a]/25 blur-[110px] rounded-full" />
 
-      <div className="relative z-10 px-8 pt-13 pb-8">
-        <section className="text-center">
-        <img
-  src="/relay-logo.png"
-  alt="RELAY"
-  className="mx-auto w-[330px] h-auto"
-/>
+      <div className="relative z-10 h-full px-8 pt-16 pb-14 flex flex-col items-center">
+        <section className="text-center mt-[70px]">
+          <img
+            src="/relay-logo.png"
+            alt="RELAY"
+            className="mx-auto w-[460px] max-w-[88%] h-auto object-contain"
+          />
 
-          <p className="mt-7 text-[13px] leading-[1.6] text-gray-300 font-medium">
-          쉽고 빠른 재료 순환 플랫폼, Relay!
-            <br />
-           남는 재료를 등록하고 필요한 재료를 가져가세요.
-          </p>
+<p className="mt-8 text-[15px] leading-[1.5] text-gray-300 font-medium">
+  남는 재료를 등록하고, 필요한 재료를 바로 가져가세요.
+  <br />
+  Relay는 버려지는 재료를 필요한 사람에게 이어주는
+  <br />
+  재료 순환 서비스입니다.
+</p>
 
-          <button 
-          onClick={() => setPage('guide')}
-          className="mt-4 text-[14px] text-gray-300 font-bold underline underline-offset-4">
+          <button
+            type="button"
+            onClick={() => setPage('guide')}
+            className="mt-5 text-[18px] text-gray-300 font-black underline underline-offset-4"
+          >
             이용방법 더보기 ›
           </button>
         </section>
 
-        <button
-          onClick={() => setPage('register')}
-          className="mt-7 w-full h-[58px] rounded-full bg-[#9cff5a] text-black text-[23px] font-black shadow-[0_10px_30px_rgba(156,255,90,0.23)]"
-        >
-          재료 등록하기
-        </button>
+        <div className="mt-auto mb-10 w-full grid grid-cols-2 gap-7">
+  <button
+    type="button"
+    onClick={() => setPage('registerGuide')}
+    className="h-[130px] rounded-[20px] bg-[#A9FF70] text-black flex items-center px-5 overflow-hidden shadow-[0_14px_35px_rgba(156,255,90,0.18)]"
+  >
+    <img
+      src="/icon-register.png"
+      alt=""
+      className="w-[67px] h-[67px] object-contain shrink-0 mr-5"
+    />
 
-        <section className="mt-7">
-          <div className="flex items-end gap-3">
-            <h2 className="text-[19px] font-black">현재 보관중인 재료</h2>
-            <p className="text-[#9cff5a] text-[32px] leading-none font-black">
-              {materials.length}<span className="text-[17px] ml-1 text-white">건</span>
-            </p>
-          </div>
+    <div className="text-left flex-1 min-w-0">
+      <p className="text-[29px] font-black leading-none whitespace-nowrap">
+        등록하기
+      </p>
+      <p className="mt-3 text-[13px] font-medium leading-tight">
+        남은 재료를 공유해요
+      </p>
+    </div>
+  </button>
 
-          <div
-            ref={scrollRef}
-            onWheel={handleWheel}
-            className="mt-5 -mx-8 px-8 overflow-x-auto overflow-y-hidden cursor-grab active:cursor-grabbing [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+  <button
+    type="button"
+    onClick={() => setPage('pickupGuide')}
+    className="h-[130px] rounded-[20px] bg-[#A9FF70] text-black flex items-center px-5 overflow-hidden shadow-[0_14px_35px_rgba(156,255,90,0.18)]"
+  >
+    <img
+      src="/icon-pickup.png"
+      alt=""
+      className="w-[67px] h-[67px] object-contain shrink-0 mr-5"
+    />
+
+    <div className="text-left flex-1 min-w-0">
+      <p className="text-[29px] font-black leading-none whitespace-nowrap">
+        가져가기
+      </p>
+      <p className="mt-3 text-[13px] font-medium leading-tight">
+        필요 재료를 가져가요
+      </p>
+    </div>
+  </button>
+</div>
+      </div>
+    </div>
+  )
+}
+
+function RegisterGuidePage({ setPage }) {
+  return (
+    <div className="relative w-full h-full bg-[#303030] text-white overflow-hidden">
+      <header className="absolute top-0 left-0 right-0 z-50 bg-[#303030] px-8 pt-8 pb-6">
+        <div className="relative flex items-center justify-center">
+          <button
+            type="button"
+            onClick={() => setPage('home')}
+            className="absolute left-0 text-[#9cff5a] text-[34px] leading-none"
           >
-            <div className="flex w-max gap-3">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`shrink-0 h-[42px] px-5 rounded-full font-black text-[15px] ${
-                    selectedCategory === cat
-                      ? 'bg-[#9cff5a] text-black'
-                      : 'bg-[#bfbfbf] text-black'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          </div>
+            ←
+          </button>
 
-          <div className="mt-5 space-y-3">
-            {materials.map((item, index) => (
+          <h1 className="text-[#9cff5a] text-[22px] font-black">
+            재료 등록하기
+          </h1>
+        </div>
+      </header>
+
+      <div className="h-full overflow-y-auto overflow-x-hidden px-8 pt-[130px] pb-[150px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className=" rounded-[5px] overflow-hidden">
+          <img
+            src="/guide-register-page.png"
+            alt="재료 등록하기 이용방법"
+            className="w-full h-auto block"
+          />
+        </div>
+      </div>
+
+      <footer className="absolute bottom-0 left-0 right-0 z-50 bg-[#303030] px-8 py-8">
+        <button
+          type="button"
+          onClick={() => setPage('register')}
+          className="w-full h-[58px] rounded-full bg-[#9cff5a] text-black text-[23px] font-black shadow-[0_12px_35px_rgba(156,255,90,0.2)]"
+        >
+          등록하기
+        </button>
+      </footer>
+    </div>
+  )
+}
+
+function PickupGuidePage({ setPage }) {
+  return (
+    <div className="relative w-full h-full bg-[#303030] text-white overflow-hidden">
+      <header className="absolute top-0 left-0 right-0 z-50 bg-[#303030] px-8 pt-8 pb-6">
+        <div className="relative flex items-center justify-center">
+          <button
+            type="button"
+            onClick={() => setPage('home')}
+            className="absolute left-0 text-[#9cff5a] text-[34px] leading-none"
+          >
+            ←
+          </button>
+
+          <h1 className="text-[#9cff5a] text-[22px] font-black">
+            재료 가져가기
+          </h1>
+        </div>
+      </header>
+
+      <div className="h-full overflow-y-auto overflow-x-hidden px-8 pt-[130px] pb-[150px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className=" rounded-[5px] overflow-hidden">
+          <img
+            src="/guide-pickup-page.png"
+            alt="재료 가져가기 이용방법"
+            className="w-full h-auto block"
+          />
+        </div>
+      </div>
+
+      <footer className="absolute bottom-0 left-0 right-0 z-50 bg-[#303030] px-8 py-8">
+        <button
+          type="button"
+          onClick={() => setPage('pickupList')}
+          className="w-full h-[58px] rounded-full bg-[#9cff5a] text-black text-[23px] font-black shadow-[0_12px_35px_rgba(156,255,90,0.2)]"
+        >
+          가져가기
+        </button>
+      </footer>
+    </div>
+  )
+}
+
+function PickupListPage({
+  setPage,
+  materials,
+  selectedCategory,
+  setSelectedCategory,
+  setSelectedMaterial,
+  scrollRef,
+  handleWheel,
+}) {
+  return (
+    <div className="relative w-full h-full bg-[#303030] text-white overflow-hidden">
+      {/* 상단 헤더 */}
+      <header className="absolute top-0 left-0 right-0 z-50 bg-[#303030] px-8 pt-8 pb-6">
+        <div className="relative flex items-center justify-center">
+          <button
+            type="button"
+            onClick={() => setPage('home')}
+            className="absolute left-0 text-[#9cff5a] text-[34px] leading-none"
+          >
+            ←
+          </button>
+
+          <h1 className="text-[#9cff5a] text-[22px] font-black">
+            재료 가져가기
+          </h1>
+        </div>
+      </header>
+
+      {/* 고정 영역: 개수 + 카테고리 */}
+      <section className="absolute top-[105px] left-0 right-0 z-40 bg-[#303030] px-8 pb-7">
+        <div className="flex items-end gap-3">
+          <h2 className="text-[19px] font-black">
+            현재 보관중인 재료
+          </h2>
+
+          <p className="text-[#9cff5a] text-[32px] leading-none font-black">
+            {materials.length}
+            <span className="text-[17px] ml-1 text-white">건</span>
+          </p>
+        </div>
+
+        <div
+          ref={scrollRef}
+          onWheel={handleWheel}
+          className="mt-7 -mx-8 px-8 overflow-x-auto overflow-y-hidden cursor-grab active:cursor-grabbing [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        >
+          <div className="flex w-max gap-3">
+            {categories.map((cat) => (
+              <button
+                type="button"
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`shrink-0 h-[42px] px-5 rounded-full font-black text-[15px] ${
+                  selectedCategory === cat
+                    ? 'bg-[#9cff5a] text-black'
+                    : 'bg-[#bfbfbf] text-black'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 스크롤 영역: 재료 카드만 */}
+      <div className="absolute top-[265px] bottom-0 left-0 right-0 overflow-y-auto overflow-x-hidden px-8 pb-32 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="space-y-4">
+          {materials.map((item, index) => {
+            const createdAt = item.created_at || item.createdAt
+            const remainDays = createdAt ? getRemainDays(createdAt) : 21
+
+            return (
               <article
-              key={index}
-              onClick={() => {
-                setSelectedMaterial(item)
-                setPage('detail')
-              }}
+                key={item.id || index}
+                onClick={() => {
+                  setSelectedMaterial(item)
+                  setPage('detail')
+                }}
                 className="bg-white text-black rounded-[18px] px-5 py-4 flex items-center justify-between"
               >
                 <div>
-                  <h3 className="text-[20px] leading-none font-black">{item.name}</h3>
+                  <h3 className="text-[20px] leading-none font-black">
+                    {item.name}
+                  </h3>
+
                   <p className="mt-3 text-[13px] font-bold text-gray-400">
                     {item.type}
                     <span className="mx-2">•</span>
@@ -349,25 +548,31 @@ function HomePage({
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2 text-gray-300 font-black text-[18px]">
-                <span
-  className={
-    getRemainDays(item.createdAt) <= 1
-      ? 'text-red-500'
-      : getRemainDays(item.createdAt) <= 3
-      ? 'text-yellow-400'
-      : 'text-gray-300'
-  }
->
-  {getDDay(item.createdAt)}
-</span>
-                  <span className="text-[24px] leading-none">›</span>
+                <div className="flex items-center gap-2 font-black text-[18px]">
+                  <span
+                    className={
+                      remainDays <= 1
+                        ? 'text-red-500'
+                        : remainDays <= 3
+                        ? 'text-yellow-400'
+                        : 'text-gray-300'
+                    }
+                  >
+                    {createdAt ? getDDay(createdAt) : item.day || 'D-21'}
+                  </span>
+
+                  <span className="text-gray-300 text-[24px] leading-none">
+                    ›
+                  </span>
                 </div>
               </article>
-            ))}
-          </div>
-        </section>
+            )
+          })}
+        </div>
       </div>
+
+      {/* 하단 그라데이션 */}
+      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-[180px] bg-gradient-to-t from-[#303030] via-[#303030]/85 to-transparent z-30" />
     </div>
   )
 }
@@ -406,6 +611,21 @@ function getRemainDays(createdAt) {
 }
 
 function RegisterPage({ setPage, form, setForm, handleSubmit }) {
+
+  const stateIconMap = {
+    새것: {
+      active: '/icon-new-green.png',
+      inactive: '/icon-new-gray.png',
+    },
+    사용함: {
+      active: '/icon-used-green.png',
+      inactive: '/icon-used-gray.png',
+    },
+    잔여분: {
+      active: '/icon-leftover-green.png',
+      inactive: '/icon-leftover-gray.png',
+    },
+  }
   return (
     <div className="relative w-full h-full bg-[#303030] overflow-hidden">
       <header className="absolute top-0 left-0 right-0 z-50 bg-[#303030] px-8 pt-8 pb-6">
@@ -467,25 +687,47 @@ function RegisterPage({ setPage, form, setForm, handleSubmit }) {
         <div className="mt-7">
           <Label text="상태 *" />
           <div className="mt-3 grid grid-cols-3 gap-3">
-            {statusOptions.map((state) => (
-              <button
-                key={state}
-                onClick={() => setForm({ ...form, state })}
-                className={`h-[94px] rounded-[12px] font-black flex flex-col items-center justify-center ${
-                  form.state === state
-                    ? 'bg-[#f2fff2] text-[#4ed64a] border-2 border-[#9cff5a]'
-                    : 'bg-white text-black'
-                }`}
-              >
-                <span className={`text-[22px] ${form.state === state ? 'text-[#4ed64a]' : 'text-gray-400'}`}>
-                  {state === '새것' ? '✦' : state === '사용함' ? '▤' : '✂'}
-                </span>
-                <span className="text-[17px] mt-1">{state}</span>
-                <span className={`text-[12px] mt-2 ${form.state === state ? 'text-[#63db62]' : 'text-gray-300'}`}>
-                  {state === '새것' ? '미개봉 / 미사용' : state === '사용함' ? '일부 사용' : '남은 일부'}
-                </span>
-              </button>
-            ))}
+          {statusOptions.map((state) => (
+  <button
+    type="button"
+    key={state}
+    onClick={() => setForm({ ...form, state })}
+    className={`h-[110px] rounded-[12px] font-black flex flex-col items-center justify-center ${
+      form.state === state
+        ? 'bg-[#f2fff2] text-[#4ed64a] border-2 border-[#9cff5a]'
+        : 'bg-white text-black'
+    }`}
+  >
+    <img
+  src={
+    form.state === state
+      ? stateIconMap[state].active
+      : stateIconMap[state].inactive
+  }
+  alt=""
+  className="w-[30px] h-[30px] object-contain"
+/>
+    <span
+      className={`text-[17px] mt-2 ${
+        form.state === state ? 'text-[#4ed64a]' : 'text-black'
+      }`}
+    >
+      {state}
+    </span>
+
+    <span
+      className={`text-[12px] mt-1 ${
+        form.state === state ? 'text-[#63db62]' : 'text-gray-300'
+      }`}
+    >
+      {state === '새것'
+        ? '미개봉 / 미사용'
+        : state === '사용함'
+        ? '일부 사용 (50%이상 남음)'
+        : '많이 사용 (50%미만 남음)'}
+    </span>
+  </button>
+))}
           </div>
         </div>
 
@@ -502,7 +744,7 @@ function RegisterPage({ setPage, form, setForm, handleSubmit }) {
         <div className="mt-7 bg-[#ddffd0] rounded-[14px] p-5 text-[#00864b]">
           <p className="font-black text-[15px]">ⓘ &nbsp; 보관 기간 안내</p>
           <p className="mt-2 text-[14px]">
-            재료는 <b>3주 후</b>에 자동 폐기됩니다.
+            재료는 <b>3주 후</b>에 자동 폐기돼요.
           </p>
         </div>
       </div>
@@ -519,99 +761,28 @@ function RegisterPage({ setPage, form, setForm, handleSubmit }) {
   )
 }
 
-function SuccessPage({ setPage, savedMaterial }) {
-  const zone = savedMaterial?.loc || 'A3'
-  const barcode = savedMaterial?.barcode ?? 21
-
+function SavedInfoPage({ setPage }) {
   return (
-    <div className="relative w-full h-full bg-[#303030] overflow-y-auto overflow-x-hidden px-8 pt-8 pb-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-      <header className="relative flex items-center justify-center mb-10">
-        <button
-          onClick={() => setPage('home')}
-          className="absolute left-0 text-[#9cff5a] text-[34px] leading-none"
-        >
-          ←
-        </button>
-        <h1 className="text-[#9cff5a] text-[22px] font-black">재료 등록</h1>
-      </header>
-
-      <section className="text-center">
-        <div className="mx-auto w-[58px] h-[58px] rounded-full border-[4px] border-[#9cff5a] flex items-center justify-center text-[#9cff5a] text-[32px]">
+    <div className="relative w-full h-full bg-[#303030] text-white flex flex-col items-center justify-center px-8">
+      <div className="flex-1 flex flex-col items-center justify-center text-center pb-20">
+        <div className="w-[80px] h-[80px] rounded-full border-[4px] border-[#9cff5a] flex items-center justify-center text-[#9cff5a] text-[48px]">
           ✓
         </div>
-        <p className="mt-7 text-[#9cff5a] text-[20px] font-black">
+
+        <h1 className="mt-5 text-[#9cff5a] text-[30px] font-bold">
           재료 정보가 저장됐어요
-        </p>
-      </section>
+        </h1>
+      </div>
 
-      <section className="mt-8 bg-white rounded-[24px] p-6 text-black">
-        <div className="flex gap-6">
-          <div className="w-[120px]">
-            <p className="text-[15px] font-black text-[#555]">배정된 수납공간 번호</p>
-            <p className="mt-4 text-[42px] font-black text-[#00864b] leading-none">
-              {zone}
-            </p>
-            <p className="mt-3 text-[13px] leading-5 text-[#666]">
-              아래 수납공간에
-              <br />
-              재료를 넣어주세요
-            </p>
-          </div>
-
-          <StorageMap zone={zone} />
-        </div>
-      </section>
-
-      <section className="mt-7 bg-white rounded-[24px] p-6 text-black">
-        <h2 className="text-[17px] font-black">등록 방법</h2>
-
-        <div className="mt-5 space-y-4 text-[15px] text-[#666]">
-          <p>
-            <span className="inline-flex w-6 h-6 rounded-full bg-[#16a56f] text-white items-center justify-center font-black mr-3">
-              1
-            </span>
-            아래 번호의 바코드 스티커를 떼어주세요.
-          </p>
-          <p>
-            <span className="inline-flex w-6 h-6 rounded-full bg-[#16a56f] text-white items-center justify-center font-black mr-3">
-              2
-            </span>
-            등록하려는 <b>재료의 왼쪽 상단</b>에 바코드를 부착해주세요.
-          </p>
-          <p>
-            <span className="inline-flex w-6 h-6 rounded-full bg-[#16a56f] text-white items-center justify-center font-black mr-3">
-              3
-            </span>
-            부착 후 바코드를 스캔하면 등록이 완료됩니다.
-          </p>
-        </div>
-      </section>
-
-      <section className="mt-7 bg-white rounded-[24px] p-6 text-black text-center">
-        <p className="text-[42px] font-black text-[#00864b]">{barcode}</p>
-        <div className="mt-3 mx-auto w-[170px] h-[70px] flex items-end justify-center gap-[3px]">
-          {Array.from({ length: 26 }, (_, i) => (
-            <div
-              key={i}
-              className="bg-black"
-              style={{
-                width: i % 3 === 0 ? '7px' : i % 2 === 0 ? '4px' : '2px',
-                height: '62px',
-              }}
-            />
-          ))}
-        </div>
-      </section>
-      <div className="mt-6 pb-10">
-      <button
-  onClick={() => setPage('scan')}
-  className="w-full h-[64px] rounded-full bg-[#b6ff4d]
-  text-black text-[20px] font-black
-  shadow-[0_0_30px_rgba(182,255,77,0.25)]"
->
-  바코드 스캔하기
-</button>
-</div>
+      <div className="absolute bottom-0 left-0 right-0 px-8 pb-15 pt-8 border-t border-black/10 bg-[#303030]">
+        <button
+          type="button"
+          onClick={() => setPage('barcodeAttach')}
+          className="w-full h-[64px] rounded-full bg-[#9cff5a] text-black text-[22px] font-black shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
+        >
+          다음 단계
+        </button>
+      </div>
     </div>
   )
 }
@@ -678,20 +849,87 @@ function StorageMap({ zone }) {
   )
 }
 
+function BarcodeAttachPage({ setPage, savedMaterial }) {
+  const barcode = savedMaterial?.barcode ?? 21
+
+  return (
+    <div className="relative w-full h-full bg-[#303030] text-white overflow-hidden">
+      <header className="absolute top-0 left-0 right-0 z-50 bg-[#303030] px-8 pt-8 pb-6">
+        <div className="relative flex items-center justify-center">
+          <button
+            type="button"
+            onClick={() => setPage('savedInfo')}
+            className="absolute left-0 text-[#9cff5a] text-[34px] leading-none"
+          >
+            ←
+          </button>
+
+          <h1 className="text-[#9cff5a] text-[22px] font-black">
+            바코드 부착
+          </h1>
+        </div>
+      </header>
+
+      <div className="h-full overflow-y-auto overflow-x-hidden px-8 pt-[120px] pb-15 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="mx-auto w-[88%] rounded-[22px] bg-[#d8d8d8] overflow-hidden">
+          <img
+            src="/register-barcode-attach.png"
+            alt="바코드 부착 안내"
+            className="w-full h-auto block"
+          />
+        </div>
+
+        <section className="mt-7 mx-auto w-[88%] bg-white rounded-[22px] px-7 py-7 text-center text-black shadow-[0_12px_28px_rgba(0,0,0,0.18)]">
+          <p className="text-[18px] leading-[1.6] text-[#555] font-semibold">
+            아래 서랍에서 해당하는 번호의 바코드를
+            <br />
+            물건의 오른쪽 상단에 부착해주세요.
+          </p>
+
+          <p className="mt-5 text-[64px] leading-none font-black text-[#00864b]">
+            {barcode}
+          </p>
+
+          <p className="mt-7 text-[14px] leading-[1.5] text-[#999]">
+            *스프레이 등 원기둥 형태의 물건은 
+            평평한 곳에 부착해 주세요
+          </p>
+        </section>
+
+        <button
+          type="button"
+          onClick={() => setPage('scan')}
+          className="mt-10 w-full h-[64px] rounded-full bg-[#9cff5a] text-black text-[22px] font-black shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
+        >
+          다음 단계
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function ScanPage({ setPage, savedMaterial }) {
   const [scanValue, setScanValue] = useState('')
+  const [showHelp, setShowHelp] = useState(false)
+  const [showWrongBarcode, setShowWrongBarcode] = useState(false)
+  const [wrongValue, setWrongValue] = useState('')
   const scanBuffer = useRef('')
+
+  const barcode = savedMaterial?.barcode ?? 21
 
   useEffect(() => {
     const handleKeyDown = (e) => {
+      if (showWrongBarcode) return
+
       if (e.key === 'Enter') {
         const scanned = scanBuffer.current.trim()
-        const targetBarcode = String(savedMaterial?.barcode ?? '')
+        const targetBarcode = String(barcode)
 
         if (scanned === targetBarcode) {
           setPage('final')
         } else {
-          alert('바코드 번호가 일치하지 않아!')
+          setWrongValue(scanned)
+          setShowWrongBarcode(true)
         }
 
         scanBuffer.current = ''
@@ -710,109 +948,228 @@ function ScanPage({ setPage, savedMaterial }) {
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [savedMaterial, setPage])
+  }, [barcode, setPage, showWrongBarcode])
 
   return (
-    <div className="w-full h-full bg-black text-white px-6 pt-8 relative overflow-hidden">
-      <header className="flex items-center justify-center relative">
-        <h1 className="text-[22px] font-black">
-          바코드 스캔
-        </h1>
+    <div className="relative w-full h-full bg-[#303030] text-white overflow-hidden">
+      <header className="absolute top-0 left-0 right-0 z-50 bg-[#303030] px-8 pt-8 pb-6">
+        <div className="relative flex items-center justify-center">
+          <h1 className="text-[#9cff5a] text-[22px] font-black">
+            바코드 스캔
+          </h1>
 
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            setPage('success')
-          }}
-          className="absolute right-4 top-1/2 -translate-y-1/2
-          w-[44px] h-[44px] rounded-full
-          bg-[#2d2d2d]
-          text-[30px]
-          flex items-center justify-center"
-        >
-          <span className="-mt-[6px]">×</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => setPage('barcodeAttach')}
+            className="absolute right-0 top-1/2 -translate-y-1/2 w-[52px] h-[52px] rounded-full bg-white/20 text-white text-[34px] flex items-center justify-center"
+          >
+            ×
+          </button>
+        </div>
       </header>
 
-      <div className="mt-28 flex justify-center">
-        <div className="relative w-[260px] h-[260px]">
-          <div className="absolute left-0 top-0 w-[60px] h-[60px] border-l-[5px] border-t-[5px] border-[#00c2a8] rounded-tl-[20px]" />
-          <div className="absolute right-0 top-0 w-[60px] h-[60px] border-r-[5px] border-t-[5px] border-[#00c2a8] rounded-tr-[20px]" />
-          <div className="absolute left-0 bottom-0 w-[60px] h-[60px] border-l-[5px] border-b-[5px] border-[#00c2a8] rounded-bl-[20px]" />
-          <div className="absolute right-0 bottom-0 w-[60px] h-[60px] border-r-[5px] border-b-[5px] border-[#00c2a8] rounded-br-[20px]" />
+      <main className="absolute top-[125px] bottom-0 left-0 right-0 px-8 flex flex-col items-center overflow-hidden">
+        <img
+          src="/register-barcode-scan.png"
+          alt="바코드 스캔 안내"
+          className="w-[76%] h-auto block rounded-[24px]"
+        />
 
-          <div
-            className="absolute left-1/2 top-1/2
-            -translate-x-1/2 -translate-y-1/2
-            w-[180px] h-[3px]
-            bg-[#00c2a8]
-            shadow-[0_0_12px_#00c2a8]"
-          />
+        <div className="mt-8 flex items-center justify-center gap-2 text-[20px] font-black text-white/55">
+          <span className="w-[14px] h-[14px] rounded-full bg-[#84c260]" />
+          <span>바코드 번호 {scanValue || barcode}</span>
         </div>
+
+        <div className="relative mt-auto mb-14 flex flex-col items-center">
+          {showHelp && (
+            <div className="absolute bottom-[46px] left-1/2 -translate-x-1/2 w-[390px] rounded-[14px] bg-white text-black px-6 py-5 shadow-[0_12px_30px_rgba(0,0,0,0.28)]">
+              <p className="text-[15px] font-black">
+                스캔이 안되나요?
+              </p>
+
+              <p className="mt-4 text-[13px] leading-[1.7] text-[#777] font-medium">
+                만약 스캔이 안된다면 바코드를 살짝 떼어
+                평평하게 만든 후에 다시 찍어주세요.
+              </p>
+            </div>
+          )}
+
+          <button
+            type="button"
+            className="underline text-[18px] text-[#d9d9d9]"
+            onClick={() => setShowHelp((prev) => !prev)}
+          >
+            스캔이 안 되나요?
+          </button>
+        </div>
+      </main>
+
+      {showWrongBarcode && (
+  <div
+    onClick={() => {
+      setShowWrongBarcode(false)
+      setWrongValue('')
+    }}
+    className="absolute inset-0 z-[100] bg-black/70 flex items-center justify-center px-8"
+  >
+    <div
+      className="w-[340px] rounded-[24px] bg-white text-black px-6 py-8 text-center shadow-[0_18px_45px_rgba(0,0,0,0.35)]"
+    >
+      <div className="mx-auto w-[65px] h-[65px] rounded-full bg-[#fff7df] flex items-center justify-center">
+      <span className="text-[34px] text-[#f2a20c] -mt-[15px] leading-none">
+  ⚠
+</span>
       </div>
 
-      <p className="mt-12 text-center text-[18px] text-[#d9d9d9]">
-        재료에 부착된 바코드를 스캔해주세요.
+      <h2 className="mt-5 text-[20px] font-black">
+        할당된 바코드가 아니에요.
+      </h2>
+
+      <p className="mt-1 text-[14px] leading-[1.6] text-[#8b8b8b] font-medium">
+        번호를 확인하고 다시 부착해주세요.
       </p>
 
-      <div className="mt-6 text-center">
-        <p className="text-[14px] text-white/40">
-          인식된 바코드
-        </p>
-        <p className="mt-2 text-[#9cff5a] text-[28px] font-black">
-          {scanValue || '-'}
-        </p>
-      </div>
-
-      <button
-        onClick={() => {
-          const targetBarcode = String(savedMaterial?.barcode ?? '')
-          if (targetBarcode) {
-            setPage('final')
-          }
-        }}
-        className="absolute bottom-10 left-1/2
-        -translate-x-1/2
-        underline text-[18px] text-[#d9d9d9]"
-      >
-        테스트용으로 완료하기
-      </button>
+      <p className="mt-3 text-[44px] leading-none font-black text-[#00864b]">
+        {barcode}
+      </p>
+    </div>
+  </div>
+)}
     </div>
   )
 }
 
-function FinalPage({ setPage }) {
+function CompactStorageMap({ zone }) {
+  const isActive = (z) => zone === z
+
+  const boxClass = (z) =>
+    `absolute rounded-[8px] border-[2px] flex items-center justify-center text-[18px] font-bold ${
+      isActive(z)
+        ? 'bg-[#ddffd0] border-[#61c97a] text-[#208c3d] font-black'
+        : 'bg-white border-gray-300 text-gray-400'
+    }`
+
   return (
-    <div className="relative w-full h-full bg-[#303030] text-white flex flex-col justify-center items-center px-8">
-      <div className="flex-1 flex flex-col items-center justify-start text-center pt-32">
-        <div className="w-[72px] h-[72px] rounded-full border-[4px] border-[#9cff5a] flex items-center justify-center text-[#9cff5a] text-[42px]">
-          ✓
-        </div>
-
-        <h1 className="mt-8 text-[#9cff5a] text-[30px] font-black">
-          등록 완료!
-        </h1>
-
-        <p className="mt-5 text-[17px] text-white/70">
-          재료가 목록에 공개됐어요
-        </p>
+    <div className="relative w-[360px] h-[360px] shrink-0">
+      {/* C2 / C3 */}
+      <div
+        className={boxClass('C2')}
+        style={{ top: 0, left: 0, width: 132, height: 74 }}
+      >
+        C2
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 px-8 pb-10 pt-8 border-t border-black/10 bg-[#303030]">
+      <div
+        className={boxClass('C3')}
+        style={{ top: 0, left: 142, width: 132, height: 74 }}
+      >
+        C3
+      </div>
+
+      {/* C1 */}
+      <div
+        className={boxClass('C1')}
+        style={{ top: 84, left: 0, width: 274, height: 70 }}
+      >
+        C1
+      </div>
+
+      {/* A1~A5 */}
+      {['A1', 'A2', 'A3', 'A4', 'A5'].map((z, i) => (
+        <div
+          key={z}
+          className={boxClass(z)}
+          style={{
+            top: 164,
+            left: i * 38,
+            width: 30,
+            height: 170,
+          }}
+        >
+          {z}
+        </div>
+      ))}
+
+      {/* B1 / B2 */}
+      <div
+        className={boxClass('B1')}
+        style={{ top: 164, left: 193, width: 82, height: 80 }}
+      >
+        B1
+      </div>
+
+      <div
+        className={boxClass('B2')}
+        style={{ top: 253, left: 193, width: 82, height: 80 }}
+      >
+        B2
+      </div>
+    </div>
+  )
+}
+
+function FinalPage({ setPage, savedMaterial }) {
+  const zone = savedMaterial?.loc || 'A3'
+
+  return (
+    <div className="relative w-full h-full bg-[#303030] text-white overflow-hidden px-8">
+      <section className="pt-[32px] text-center">
+  <div className="mx-auto w-[58px] h-[58px] rounded-full border-[4px] border-[#9cff5a] flex items-center justify-center text-[#9cff5a] text-[32px] leading-none">
+    ✓
+  </div>
+
+  <h1 className="mt-4 text-[#9cff5a] text-[32px] font-black leading-none">
+    등록 완료!
+  </h1>
+
+  <p className="mt-5 text-[16px] leading-[1.5] text-white/70 font-medium">
+    재료가 목록에 공개됐어요.
+    <br />
+    이제 재료를 보관함에 넣어주세요.
+  </p>
+</section>
+
+      <section className="mt-[24px] w-[98%] mx-auto h-[370px] bg-white rounded-[24px] px-7 py-4 text-black overflow-hidden">
+        <div className="flex items-start justify-between gap-5">
+          <div className="w-[160px] shrink-0">
+            <p className="mt-4 text-[20px] leading-[1.25] font-black text-[#555] whitespace-nowrap">
+              배정된 수납공간 번호
+            </p>
+
+            <p className="mt-7 text-[62px] font-black text-[#00864b] leading-none">
+              {zone}
+            </p>
+
+            <p className="mt-7 text-[19px] leading-[1.45] text-[#666]">
+              아래 수납공간에
+              <br />
+              재료를 넣어주세요
+            </p>
+          </div>
+
+          <div className=" shrink-0 scale-90 origin-center ml-6">
+  <CompactStorageMap zone={zone} />
+</div>
+        </div>
+      </section>
+
+      <footer className="absolute bottom-0 left-0 right-0 px-8 pb-8 pt-5 bg-[#303030]">
         <button
+          type="button"
           onClick={() => setPage('home')}
-          className="w-full h-[64px] rounded-full bg-[#9cff5a] text-black text-[20px] font-black shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
+          className="w-full h-[60px] rounded-full bg-[#9cff5a] text-black text-[21px] font-black shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
         >
           홈으로 돌아가기
         </button>
 
         <button
-          onClick={() => setPage('register')}
-          className="mt-4 w-full h-[64px] rounded-full bg-white text-black text-[20px] font-black"
+          type="button"
+          onClick={() => setPage('registerGuide')}
+          className="mt-4 w-full h-[60px] rounded-full bg-white text-black text-[21px] font-black"
         >
           재료 하나 더 등록
         </button>
-      </div>
+      </footer>
     </div>
   )
 }
@@ -894,28 +1251,29 @@ const dDay = item.createdAt
 
         <div className="mt-7 border-t border-white/15" />
 
-        <section className="mt-8 flex gap-8">
-          <div className="w-[120px]">
+        <section className="mt-8 flex items-start gap-6">
+  <div className="w-[150px] shrink-0">
+    <p className="text-[22px] font-black text-white/60">
+      보관 위치
+    </p>
 
-            <p className="text-[22px] font-black text-white/60">
-              보관 위치
-            </p>
+    <p className="mt-5 text-[#9cff5a] text-[44px] font-black leading-none">
+      {item.loc}
+    </p>
 
-            <p className="mt-5 text-[#9cff5a] text-[44px] font-black leading-none">
-              {item.loc}
-            </p>
+    <p className="mt-8 text-[22px] font-black text-white/60">
+      바코드 번호
+    </p>
 
-            <p className="mt-8 text-[22px] font-black text-white/60">
-              바코드 번호
-            </p>
+    <p className="mt-5 text-[#9cff5a] text-[44px] font-black leading-none">
+      {item.barcode ?? 21}
+    </p>
+  </div>
 
-            <p className="mt-5 text-[#9cff5a] text-[44px] font-black leading-none">
-              {item.barcode ?? 21}
-            </p>
-          </div>
-
-          <DarkStorageMap zone={item.loc} />
-        </section>
+  <div className="flex-1 flex justify-end pr-20 overflow-visible">
+    <DarkStorageMap zone={item.loc} />
+  </div>
+</section>
       </div>
 
       {/* 하단 고정 버튼 */}
@@ -951,7 +1309,7 @@ function DarkStorageMap({ zone }) {
     }`
 
   return (
-    <div className="relative flex-1 h-[300px]">
+    <div className="relative w-[500px] h-[420px] shrink-0 origin-top-right translate-x-23 scale-120">
       <div className={boxClass('C2')} style={{ top: 0, left: 40, width: 118, height: 58 }}>C2</div>
       <div className={boxClass('C3')} style={{ top: 0, left: 166, width: 118, height: 58 }}>C3</div>
       <div className={boxClass('C1')} style={{ top: 66, left: 40, width: 244, height: 58 }}>C1</div>
@@ -976,6 +1334,7 @@ function PickupScanPage({ setPage, material, handlePickupComplete }) {
   const [showDone, setShowDone] = useState(false)
   const [scanValue, setScanValue] = useState('')
   const scanBuffer = useRef('')
+  const [showWrongBarcode, setShowWrongBarcode] = useState(false)
 
   const item = material || {
     name: '아이소핑크 보드 A2',
@@ -985,7 +1344,7 @@ function PickupScanPage({ setPage, material, handlePickupComplete }) {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (showConfirm || showDone) return
+      if (showConfirm || showDone || showWrongBarcode) return
 
       if (e.key === 'Enter') {
         const scanned = scanBuffer.current.trim()
@@ -994,7 +1353,7 @@ function PickupScanPage({ setPage, material, handlePickupComplete }) {
         if (scanned === targetBarcode) {
           setShowConfirm(true)
         } else {
-          alert('바코드가 일치하지 않아! 다른 재료를 스캔한 것 같아.')
+          setShowWrongBarcode(true)
         }
 
         scanBuffer.current = ''
@@ -1016,77 +1375,76 @@ function PickupScanPage({ setPage, material, handlePickupComplete }) {
   }, [item.barcode, showConfirm, showDone])
 
   return (
-    <div className="w-full h-full bg-black text-white px-6 pt-8 relative overflow-hidden">
-      <header className="flex items-center justify-center relative">
-        <h1 className="text-[22px] font-black">
-          재료 바코드 스캔
-        </h1>
+    <div className="relative w-full h-full bg-[#303030] text-white overflow-hidden">
+      {/* 상단 헤더 */}
+      <header className="absolute top-0 left-0 right-0 z-50 bg-[#303030] px-8 pt-8 pb-6">
+        <div className="relative flex items-center justify-center">
+          <h1 className="text-[#9cff5a] text-[22px] font-black">
+            바코드 스캔
+          </h1>
 
-        <button
-          onClick={() => setPage('detail')}
-          className="absolute right-0 top-1/2 -translate-y-1/2
-          w-[52px] h-[52px] rounded-full bg-[#2d2d2d]
-          flex items-center justify-center text-[34px]"
-        >
-          <span className="-mt-[4px]">×</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => setPage('detail')}
+            className="absolute right-0 top-1/2 -translate-y-1/2 w-[52px] h-[52px] rounded-full bg-white/20 text-white text-[34px] flex items-center justify-center"
+          >
+            <span className="-mt-[4px]">×</span>
+          </button>
+        </div>
       </header>
 
-      <div className="mt-[150px] flex justify-center">
-        <div className="relative w-[260px] h-[260px]">
-          <div className="absolute left-0 top-0 w-[62px] h-[62px]
-          border-l-[5px] border-t-[5px] border-[#00a885]
-          rounded-tl-[22px]" />
+      {/* 스캔 안내 화면 */}
+      <main className="absolute top-[125px] bottom-0 left-0 right-0 px-8 flex flex-col items-center overflow-hidden">
+        <img
+          src="pickup-barcode-scan.png"
+          alt="수령 바코드 스캔 안내"
+          className="w-[76%] h-auto block rounded-[24px]"
+        />
 
-          <div className="absolute right-0 top-0 w-[62px] h-[62px]
-          border-r-[5px] border-t-[5px] border-[#00a885]
-          rounded-tr-[22px]" />
-
-          <div className="absolute left-0 bottom-0 w-[62px] h-[62px]
-          border-l-[5px] border-b-[5px] border-[#00a885]
-          rounded-bl-[22px]" />
-
-          <div className="absolute right-0 bottom-0 w-[62px] h-[62px]
-          border-r-[5px] border-b-[5px] border-[#00a885]
-          rounded-br-[22px]" />
-
-          <div className="absolute left-1/2 top-1/2
-          -translate-x-1/2 -translate-y-1/2
-          w-[220px] h-[3px]
-          bg-[#00a885]
-          shadow-[0_0_18px_#00a885]" />
+        <div className="mt-8 flex items-center justify-center gap-2 text-[20px] font-black text-white/55">
+          <span className="w-[14px] h-[14px] rounded-full bg-[#84c260]" />
+          <span>
+            바코드 번호 {scanValue || item.barcode || '-'} · 보관구역 {item.loc}
+          </span>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setShowConfirm(true)}
+          className="mt-auto mb-14 underline text-[18px] text-[#d9d9d9]"
+        >
+          테스트용으로 수령하기
+        </button>
+      </main>
+
+      {showWrongBarcode && (
+  <div
+    onClick={() => setShowWrongBarcode(false)}
+    className="absolute inset-0 z-[100] bg-black/70 flex items-center justify-center px-8"
+  >
+    <div className="w-[340px] rounded-[24px] bg-white text-black px-6 py-8 text-center shadow-[0_18px_45px_rgba(0,0,0,0.35)]">
+      <div className="mx-auto w-[62px] h-[62px] rounded-full bg-[#fff7df] flex items-center justify-center overflow-hidden">
+        <span className="text-[34px] text-[#f2a20c] -mt-[15px] leading-none">
+          ⚠
+        </span>
       </div>
 
-      <p className="mt-12 text-center text-[17px] text-white/80">
-        수납함에 있는 재료의 바코드를 스캔하세요
+      <h2 className="mt-5 text-[18px] font-black">
+        해당 재료의 바코드가 아니에요.
+      </h2>
+
+      <p className="mt-2 text-[14px] leading-[1.6] text-[#8b8b8b] font-medium">
+        번호를 확인하고 다시 스캔해주세요.
       </p>
 
-      <div className="mt--2 text-center">
-        <p className="text-[14px] text-white/40">
-          인식된 바코드
-        </p>
-        <p className="mt-0 text-[#9cff5a] text-[28px] font-black">
-          {scanValue || '-'}
-        </p>
-      </div>
+      <p className="mt-3 text-[44px] leading-none font-black text-[#00864b]">
+        {item.barcode}
+      </p>
+    </div>
+  </div>
+)}
 
-      <div className="mt-8 flex items-center justify-center gap-2 text-[17px] font-black">
-        <span className="w-[10px] h-[10px] rounded-full bg-[#00a885]" />
-        <span>{item.name}</span>
-        <span className="text-white/50">·</span>
-        <span>구역 {item.loc}</span>
-      </div>
-
-      <button
-        onClick={() => setShowConfirm(true)}
-        className="absolute bottom-10 left-1/2
-        -translate-x-1/2
-        underline text-[18px] text-[#d9d9d9]"
-      >
-        테스트용으로 수령하기
-      </button>
-
+      {/* 기존 확인 팝업: 건드리지 않음 */}
       {showConfirm && (
         <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-50">
           <div
@@ -1144,6 +1502,7 @@ function PickupScanPage({ setPage, material, handlePickupComplete }) {
         </div>
       )}
 
+      {/* 기존 완료 팝업: 건드리지 않음 */}
       {showDone && (
         <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="w-[320px] rounded-[28px] bg-[#f5f5f5] px-6 pt-8 pb-6 flex flex-col items-center">
