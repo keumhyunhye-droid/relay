@@ -93,6 +93,7 @@ export default function App() {
       : initialMaterials
   })
   const [selectedCategory, setSelectedCategory] = useState('전체')
+  const [selectedZone, setSelectedZone] = useState('전체 구역')
   const [savedMaterial, setSavedMaterial] = useState(null)
   const [selectedMaterial, setSelectedMaterial] = useState(null)
 
@@ -100,14 +101,24 @@ export default function App() {
     name: '',
     type: '',
     studentId: '',
-    state: '새것',
+    state: '거의 새거예요',
+    thickness: 3,
+    widthMm: '',
+    heightMm: '',
     description: '',
   })
 
-  const filteredMaterials =
+  const categoryFilteredMaterials =
     selectedCategory === '전체'
       ? materials
       : materials.filter((item) => item.type === selectedCategory)
+
+  const filteredMaterials =
+    selectedZone === '전체 구역'
+      ? categoryFilteredMaterials
+      : categoryFilteredMaterials.filter((item) =>
+          item.loc?.startsWith(selectedZone[0])
+        )
 
   const scrollRef = useRef(null)
 
@@ -126,48 +137,58 @@ export default function App() {
   }
 
   const handleSubmit = () => {
-    if (!form.name || !form.type || !form.state) {
-      alert('필수 항목을 입력해줘!')
-      return
-    }
+    const assignedType = form.type || '기타'
+    const assignedState = form.state || '거의 새거예요'
+    const assignedStudentId = form.studentId?.trim() || '학번 미입력'
+    const assignedThickness = form.thickness || 3
+    const dimensionText =
+      assignedType === '플라스틱/아크릴' && (form.widthMm || form.heightMm)
+        ? `치수: ${form.widthMm || '?'} × ${form.heightMm || '?'}mm`
+        : ''
 
-    const assignedZone = getAvailableZone(form.type, materials)
-    const barcode = getBarcodeNumber(materials)
+    const assignedZone =
+      getAvailableZone(assignedType, materials) ||
+      (zoneRules[assignedType] || zoneRules.default)[0] ||
+      'A3'
 
-    if (!assignedZone) {
-      alert('해당 재료를 보관할 수 있는 구역이 가득 찼어!')
-      return
-    }
-
-    if (barcode === null) {
-      alert('사용 가능한 바코드 번호가 없어!')
-      return
-    }
+    const barcode = getBarcodeNumber(materials) ?? Math.floor(Math.random() * 51)
+    const needsThickness = ['우드락/폼보드', '아이소핑크', '플라스틱/아크릴'].includes(assignedType)
+    const thicknessName = assignedThickness === 20 ? '20t 이상' : `${assignedThickness}t`
+    const autoName = needsThickness ? `${assignedType} ${thicknessName}` : assignedType
 
     const newMaterial = {
-      name: form.name,
-      type: form.type,
-      state: form.state,
-      studentId: form.studentId,
-      description: form.description,
+      name: form.name || autoName,
+      type: assignedType,
+      state: assignedState,
+      studentId: assignedStudentId,
+      thickness: assignedThickness,
+      widthMm: form.widthMm,
+      heightMm: form.heightMm,
+      description:
+        [dimensionText, form.description.trim()].filter(Boolean).join(' / ') ||
+        '등록된 설명이 없습니다',
       loc: assignedZone,
       barcode,
       createdAt: new Date().toISOString(),
     }
 
-    setMaterials([newMaterial, ...materials])
+    setMaterials((prev) => [newMaterial, ...prev])
     setSavedMaterial(newMaterial)
 
     setForm({
       name: '',
       type: '',
       studentId: '',
-      state: '새것',
+      state: '거의 새거예요',
+      thickness: 3,
+      widthMm: '',
+      heightMm: '',
       description: '',
     })
 
     setSelectedCategory('전체')
-    setPage('savedInfo')
+    setSelectedZone('전체 구역')
+    setPage('barcodeAttach')
   }
   const handlePickupComplete = (target) => {
     setMaterials((prev) =>
@@ -195,6 +216,8 @@ export default function App() {
     materials={filteredMaterials}
     selectedCategory={selectedCategory}
     setSelectedCategory={setSelectedCategory}
+    selectedZone={selectedZone}
+    setSelectedZone={setSelectedZone}
     setSelectedMaterial={setSelectedMaterial}
   />
 
@@ -208,6 +231,8 @@ export default function App() {
     materials={filteredMaterials}
     selectedCategory={selectedCategory}
     setSelectedCategory={setSelectedCategory}
+    selectedZone={selectedZone}
+    setSelectedZone={setSelectedZone}
     setSelectedMaterial={setSelectedMaterial}
     scrollRef={scrollRef}
     handleWheel={handleWheel}
@@ -324,7 +349,7 @@ function HomePage({ setPage }) {
         <div className="mt-auto mb-10 w-full grid grid-cols-2 gap-7">
   <button
     type="button"
-    onClick={() => setPage('registerGuide')}
+    onClick={() => setPage('register')}
     className="h-[130px] rounded-[20px] bg-[#A9FF70] text-black flex items-center px-5 overflow-hidden shadow-[0_14px_35px_rgba(156,255,90,0.18)]"
   >
     <img
@@ -335,7 +360,7 @@ function HomePage({ setPage }) {
 
     <div className="text-left flex-1 min-w-0">
       <p className="text-[29px] font-black leading-none whitespace-nowrap">
-        등록하기
+        두고가기
       </p>
       <p className="mt-3 text-[13px] font-medium leading-tight">
         남은 재료를 공유해요
@@ -345,7 +370,7 @@ function HomePage({ setPage }) {
 
   <button
     type="button"
-    onClick={() => setPage('pickupGuide')}
+    onClick={() => setPage('pickupList')}
     className="h-[130px] rounded-[20px] bg-[#A9FF70] text-black flex items-center px-5 overflow-hidden shadow-[0_14px_35px_rgba(156,255,90,0.18)]"
   >
     <img
@@ -458,10 +483,15 @@ function PickupListPage({
   materials,
   selectedCategory,
   setSelectedCategory,
+  selectedZone,
+  setSelectedZone,
   setSelectedMaterial,
   scrollRef,
   handleWheel,
 }) {
+  const [zoneOpen, setZoneOpen] = useState(false)
+  const zoneOptions = ['전체 구역', 'A 구역', 'B 구역', 'C 구역']
+
   return (
     <div className="relative w-full h-full bg-[#303030] text-white overflow-hidden">
       {/* 상단 헤더 */}
@@ -483,15 +513,48 @@ function PickupListPage({
 
       {/* 고정 영역: 개수 + 카테고리 */}
       <section className="absolute top-[105px] left-0 right-0 z-40 bg-[#303030] px-8 pb-7">
-        <div className="flex items-end gap-3">
-          <h2 className="text-[19px] font-black">
-            현재 보관중인 재료
-          </h2>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-end gap-3 pt-3">
+            <h2 className="text-[19px] font-black">
+              현재 보관중인 재료
+            </h2>
 
-          <p className="text-[#9cff5a] text-[32px] leading-none font-black">
-            {materials.length}
-            <span className="text-[17px] ml-1 text-white">건</span>
-          </p>
+            <p className="text-[#9cff5a] text-[32px] leading-none font-black">
+              {materials.length}
+              <span className="text-[17px] ml-1 text-white">건</span>
+            </p>
+          </div>
+
+          <div className="relative z-50">
+            <button
+              type="button"
+              onClick={() => setZoneOpen(!zoneOpen)}
+              className="w-[150px] h-[60px] rounded-[12px] bg-white text-[#333] text-[19px] font-bold flex items-center justify-center gap-3 shadow-[0_2px_7px_rgba(0,0,0,0.2)]"
+            >
+              <span>{selectedZone}</span>
+              <span className="w-0 h-0 border-l-[8px] border-r-[8px] border-t-[14px] border-l-transparent border-r-transparent border-t-[#d8d8d8]" />
+            </button>
+
+            {zoneOpen && (
+              <div className="absolute right-0 top-[64px] w-[150px] overflow-hidden rounded-[12px] bg-white text-[#333] shadow-[0_5px_13px_rgba(0,0,0,0.25)]">
+                {zoneOptions.map((zone) => (
+                  <button
+                    type="button"
+                    key={zone}
+                    onClick={() => {
+                      setSelectedZone(zone)
+                      setZoneOpen(false)
+                    }}
+                    className={`block w-full h-[54px] px-5 text-left text-[19px] font-bold ${
+                      selectedZone === zone ? 'bg-[#e9e9e9]' : 'bg-white'
+                    }`}
+                  >
+                    {zone}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div
@@ -611,153 +674,385 @@ function getRemainDays(createdAt) {
 }
 
 function RegisterPage({ setPage, form, setForm, handleSubmit }) {
+  const [step, setStep] = useState(1)
+  const thicknessOptions = [1, 2, 3, 5, 10, 20]
 
-  const stateIconMap = {
-    새것: {
-      active: '/icon-new-green.png',
-      inactive: '/icon-new-gray.png',
-    },
-    사용함: {
-      active: '/icon-used-green.png',
-      inactive: '/icon-used-gray.png',
-    },
-    잔여분: {
-      active: '/icon-leftover-green.png',
-      inactive: '/icon-leftover-gray.png',
-    },
+  const updateForm = (patch) => setForm({ ...form, ...patch })
+
+  const isBoardType = ['우드락/폼보드', '아이소핑크'].includes(form.type)
+  const isSprayType = form.type === '스프레이/본드류'
+  const isPlasticType = form.type === '플라스틱/아크릴'
+  const isSimpleType = !isBoardType && !isSprayType && !isPlasticType
+
+  const goNext = () => {
+    if (step === 1 && !form.studentId.trim()) {
+      alert('학번을 입력해줘!')
+      return
+    }
+
+    if (step === 2 && !form.type) {
+      alert('재료 종류를 골라줘!')
+      return
+    }
+
+    if (step < 3) {
+      setStep(step + 1)
+      return
+    }
+
+    handleSubmit()
   }
+
+  const goBack = () => {
+    if (step === 1) setPage('home')
+    else setStep(step - 1)
+  }
+
   return (
-    <div className="relative w-full h-full bg-[#303030] overflow-hidden">
-      <header className="absolute top-0 left-0 right-0 z-50 bg-[#303030] px-8 pt-8 pb-6">
+    <RegisterStepLayout
+      title="재료 정보 입력"
+      step={step}
+      label={step === 1 ? '학번 입력' : step === 2 ? '재료 종류' : '재료 상태'}
+      onBack={goBack}
+      onNext={goNext}
+      buttonText="다음"
+    >
+      {step === 1 && (
+        <section className="pt-[86px]">
+          <h2 className="text-[#9cff5a] text-[18px] font-black">
+            학번을 알려주세요
+          </h2>
+          <p className="mt-3 text-[12px] text-[#8d8d8d] font-semibold">
+            학번은 재료 관리 용도로만 사용되며 외부에 공개되지 않아요.
+          </p>
+
+          <input
+            value={form.studentId}
+            onChange={(e) => updateForm({ studentId: e.target.value })}
+            placeholder="2026XXXXX"
+            className="mt-6 w-full h-[48px] rounded-[10px] bg-white px-4 text-[14px] text-black placeholder:text-[#9d9d9d] outline-none"
+          />
+        </section>
+      )}
+
+      {step === 2 && (
+        <section className="pt-[72px]">
+          <h2 className="text-[#9cff5a] text-[18px] font-black">
+            재료 종류를 골라주세요
+          </h2>
+
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            {materialTypes.map((type) => (
+              <button
+                type="button"
+                key={type}
+                onClick={() =>
+                  updateForm({
+                    type,
+                    state: '거의 새거예요',
+                    thickness: 3,
+                    widthMm: '',
+                    heightMm: '',
+                  })
+                }
+                className={`h-[67px] rounded-[8px] text-[#5b5b5b] font-black flex items-center px-6 gap-5 transition ${
+                  form.type === type ? 'bg-[#dcffdc] ring-2 ring-[#9cff5a]' : 'bg-white'
+                }`}
+              >
+                <img
+                  src={materialIcons[type]}
+                  alt=""
+                  className="w-[48px] h-[42px] object-contain opacity-70 shrink-0"
+                />
+                <span className="text-[14px] whitespace-nowrap">{type}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {step === 3 && (
+        <section className="pt-[42px]">
+          <h2 className="text-[#9cff5a] text-[17px] font-black">
+            재료의 상태를 입력해주세요
+          </h2>
+
+          {(isBoardType || isSimpleType) && (
+            <>
+              <StatusCardGroup
+                form={form}
+                updateForm={updateForm}
+                iconType="board"
+                compact={isSimpleType}
+              />
+
+              {isBoardType && (
+                <ThicknessControl
+                  value={form.thickness}
+                  options={thicknessOptions}
+                  onChange={(value) => updateForm({ thickness: value })}
+                />
+              )}
+            </>
+          )}
+
+          {isSprayType && (
+            <StatusCardGroup
+              form={form}
+              updateForm={updateForm}
+              iconType="spray"
+              compact
+            />
+          )}
+
+          {isPlasticType && (
+            <>
+              <DimensionControl
+                widthMm={form.widthMm}
+                heightMm={form.heightMm}
+                onChange={updateForm}
+              />
+
+              <ThicknessControl
+                value={form.thickness}
+                options={thicknessOptions}
+                onChange={(value) => updateForm({ thickness: value })}
+              />
+            </>
+          )}
+
+          <textarea
+            value={form.description}
+            onChange={(e) => updateForm({ description: e.target.value })}
+            placeholder="두께, 사이즈 등 재료 상태를 간단히 설명해주세요. (선택 입력)"
+            className="mt-3 w-full h-[90px] rounded-[10px] bg-white px-4 py-4 text-[13px] text-black placeholder:text-[#c2c2c2] outline-none resize-none"
+          />
+        </section>
+      )}
+    </RegisterStepLayout>
+  )
+}
+
+function StatusCardGroup({ form, updateForm, iconType = 'board', compact = false }) {
+  const sprayIcon = materialIcons['스프레이/본드류']
+  const cards = [
+    {
+      value: '거의 새거예요',
+      title: '거의 새거예요',
+      boardActive: '/icon-new-green.png',
+      boardInactive: '/icon-new-gray.png',
+    },
+    {
+      value: '조금 사용했어요',
+      title: '조금 사용했어요',
+      boardActive: '/icon-used-green.png',
+      boardInactive: '/icon-used-gray.png',
+    },
+    {
+      value: '많이 사용했어요',
+      title: '많이 사용했어요',
+      boardActive: '/icon-leftover-green.png',
+      boardInactive: '/icon-leftover-gray.png',
+    },
+  ]
+
+  return (
+    <div className={`mt-5 grid grid-cols-3 gap-3 ${compact ? '' : ''}`}>
+      {cards.map((card) => {
+        const selected = form.state === card.value
+        const iconSrc = iconType === 'spray'
+          ? sprayIcon
+          : selected
+          ? card.boardActive
+          : card.boardInactive
+
+        return (
+          <StatusCard
+            key={card.value}
+            selected={selected}
+            title={card.title}
+            iconActive={iconSrc}
+            iconInactive={iconSrc}
+            onClick={() => updateForm({ state: card.value })}
+          />
+        )
+      })}
+    </div>
+  )
+}
+
+function ThicknessControl({ value, options, onChange }) {
+  return (
+    <div className="mt-3 rounded-[10px] bg-white px-4 pt-3 pb-5 text-black">
+      <div className="flex items-center gap-3">
+        <p className="text-[15px] font-black text-[#222]">두께</p>
+        <span className="w-[42px] h-[30px] rounded-[5px] bg-[#eeeeee] flex items-center justify-center text-[18px] font-black text-[#555]">
+          {value}
+        </span>
+        <p className="text-[20px] font-black text-[#222]">t</p>
+      </div>
+
+      <input
+        type="range"
+        min="0"
+        max={options.length - 1}
+        step="1"
+        value={Math.max(0, options.indexOf(value))}
+        onChange={(e) => onChange(options[Number(e.target.value)])}
+        className="mt-4 w-full accent-[#66e85a]"
+      />
+
+      <div className="relative mt-0 h-[20px] text-[10px] text-[#8d8d8d]">
+        <span className="absolute left-0">1</span>
+        <span className="absolute left-[20%] -translate-x-1/2">2</span>
+        <span className="absolute left-[40%] -translate-x-1/2">3</span>
+        <span className="absolute left-[60%] -translate-x-1/2">5</span>
+        <span className="absolute left-[80%] -translate-x-1/2">10</span>
+        <span className="absolute right-0">20t 이상</span>
+      </div>
+    </div>
+  )
+}
+
+function DimensionControl({ widthMm, heightMm, onChange }) {
+  return (
+    <div className="mt-5 rounded-[10px] bg-white px-5 py-4 text-black">
+      <div className="grid grid-cols-[70px_1fr] items-center gap-2">
+        <p className="text-[15px] font-black text-[#222] self-start pt-1">치수</p>
+
+        <div className="relative h-[112px]">
+          <div className="absolute left-[86px] top-0 flex items-center gap-2">
+            <input
+              value={widthMm}
+              onChange={(e) => onChange({ widthMm: e.target.value.replace(/[^0-9]/g, '') })}
+              className="w-[42px] h-[30px] rounded-[5px] bg-[#eeeeee] text-center text-[14px] font-black outline-none"
+              inputMode="numeric"
+            />
+            <span className="text-[13px] font-black text-[#222]">mm</span>
+          </div>
+
+          <div className="absolute left-[55px] top-[40px] w-[130px] h-[58px] bg-[#dcffdc] border border-[#46d947]" />
+          <div className="absolute left-[55px] top-[34px] w-[130px] border-t border-[#46d947]" />
+          <div className="absolute left-[55px] top-[30px] h-[8px] border-l border-[#46d947]" />
+          <div className="absolute left-[185px] top-[30px] h-[8px] border-l border-[#46d947]" />
+
+          <div className="absolute left-[192px] top-[40px] h-[58px] border-r border-[#46d947]" />
+          <div className="absolute left-[187px] top-[40px] w-[8px] border-t border-[#46d947]" />
+          <div className="absolute left-[187px] top-[98px] w-[8px] border-t border-[#46d947]" />
+
+          <div className="absolute left-[205px] top-[56px] flex items-center gap-2">
+            <input
+              value={heightMm}
+              onChange={(e) => onChange({ heightMm: e.target.value.replace(/[^0-9]/g, '') })}
+              className="w-[42px] h-[30px] rounded-[5px] bg-[#eeeeee] text-center text-[14px] font-black outline-none"
+              inputMode="numeric"
+            />
+            <span className="text-[13px] font-black text-[#222]">mm</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function RegisterStepLayout({ title, step, label, onBack, buttonText, onNext, children }) {
+  return (
+    <div className="relative w-full h-full bg-[#303030] text-white overflow-hidden">
+      <header className="absolute top-0 left-0 right-0 z-50 bg-[#303030] px-8 pt-7 pb-5">
         <div className="relative flex items-center justify-center">
           <button
-            onClick={() => setPage('home')}
-            className="absolute left-0 text-[#9cff5a] text-[34px] leading-none"
+            type="button"
+            onClick={onBack}
+            className="absolute left-0 text-[#9cff5a] text-[30px] leading-none"
           >
             ←
           </button>
-          <h1 className="text-[#9cff5a] text-[20px] font-black">재료 등록</h1>
+          <h1 className="text-[#9cff5a] text-[18px] font-black">{title}</h1>
         </div>
+
+        <StepIndicator currentStep={step} label={label} />
       </header>
 
-      <div className="h-full overflow-y-auto overflow-x-hidden px-8 pt-[120px] pb-[145px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        <Label text="재료 명 *" />
-        <input
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          placeholder="예: 아이소핑크 보드 20T"
-          className="mt-2 w-full h-[52px] rounded-[14px] bg-white px-5 text-[17px] text-black placeholder:text-gray-300 outline-none"
-        />
-
-        <div className="mt-8">
-          <Label text="재료 종류 *" />
-          <div className="mt-3 grid grid-cols-4 gap-2">
-          {materialTypes.map((type) => (
-  <button
-    key={type}
-    onClick={() => setForm({ ...form, type })}
-    className={`h-[82px] rounded-[12px] bg-white text-black font-black flex flex-col items-center justify-center gap-2 ${
-      form.type === type ? 'ring-2 ring-[#9cff5a] bg-[#efffe8]' : ''
-    }`}
-  >
-    <img
-      src={materialIcons[type]}
-      alt=""
-      className="w-[45px] h-[45px] object-contain opacity-90"
-    />
-
-    <span className="text-[12px]">
-      {type}
-    </span>
-  </button>
-))}
-          </div>
-        </div>
-
-        <div className="mt-7">
-          <Label text="학번" />
-          <input
-            value={form.studentId}
-            onChange={(e) => setForm({ ...form, studentId: e.target.value })}
-            placeholder="2026XXXXX"
-            className="mt-2 w-full h-[52px] rounded-[14px] bg-white px-5 text-[17px] text-black placeholder:text-gray-400 outline-none"
-          />
-        </div>
-
-        <div className="mt-7">
-          <Label text="상태 *" />
-          <div className="mt-3 grid grid-cols-3 gap-3">
-          {statusOptions.map((state) => (
-  <button
-    type="button"
-    key={state}
-    onClick={() => setForm({ ...form, state })}
-    className={`h-[110px] rounded-[12px] font-black flex flex-col items-center justify-center ${
-      form.state === state
-        ? 'bg-[#f2fff2] text-[#4ed64a] border-2 border-[#9cff5a]'
-        : 'bg-white text-black'
-    }`}
-  >
-    <img
-  src={
-    form.state === state
-      ? stateIconMap[state].active
-      : stateIconMap[state].inactive
-  }
-  alt=""
-  className="w-[30px] h-[30px] object-contain"
-/>
-    <span
-      className={`text-[17px] mt-2 ${
-        form.state === state ? 'text-[#4ed64a]' : 'text-black'
-      }`}
-    >
-      {state}
-    </span>
-
-    <span
-      className={`text-[12px] mt-1 ${
-        form.state === state ? 'text-[#63db62]' : 'text-gray-300'
-      }`}
-    >
-      {state === '새것'
-        ? '미개봉 / 미사용'
-        : state === '사용함'
-        ? '일부 사용 (50%이상 남음)'
-        : '많이 사용 (50%미만 남음)'}
-    </span>
-  </button>
-))}
-          </div>
-        </div>
-
-        <div className="mt-7">
-          <Label text="상태 설명" />
-          <textarea
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            placeholder="두께, 사이즈 등 재료 상태를 간단히 설명해주세요."
-            className="mt-2 w-full h-[96px] rounded-[14px] bg-white px-5 py-4 text-[16px] text-black placeholder:text-gray-300 outline-none resize-none"
-          />
-        </div>
-
-        <div className="mt-7 bg-[#ddffd0] rounded-[14px] p-5 text-[#00864b]">
-          <p className="font-black text-[15px]">ⓘ &nbsp; 보관 기간 안내</p>
-          <p className="mt-2 text-[14px]">
-            재료는 <b>3주 후</b>에 자동 폐기돼요.
-          </p>
-        </div>
+      <div className="h-full overflow-y-auto overflow-x-hidden px-8 pt-[126px] pb-[115px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        {children}
       </div>
 
-      <footer className="absolute bottom-0 left-0 right-0 z-50 bg-[#303030] px-8 py-8 border-t border-black/10">
+      <footer className="absolute bottom-0 left-0 right-0 z-50 bg-[#303030] px-8 pb-10 pt-4">
         <button
-          onClick={handleSubmit}
-          className="w-full h-[58px] rounded-full bg-[#9cff5a] text-black text-[23px] font-black shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
+          type="button"
+          onClick={onNext}
+          className="w-full h-[58px] rounded-full border-2 border-[#9cff5a] text-[#9cff5a] text-[20px] font-black"
         >
-          등록하기
+          {buttonText}
         </button>
       </footer>
     </div>
+  )
+}
+
+function StepIndicator({ currentStep, label }) {
+  const steps = [1, 2, 3, 4, 'check']
+
+  return (
+    <div className="mt-5">
+      <div className="flex items-center gap-2">
+        {steps.map((step, index) => {
+          const isCheck = step === 'check'
+          const isActive = isCheck ? currentStep >= 5 : currentStep >= step
+          const isConnectorActive = index < currentStep - 1
+
+          return (
+            <div key={step} className="flex items-center gap-2">
+              <div
+                className={`w-[24px] h-[24px] rounded-full flex items-center justify-center text-[12px] font-bold border ${
+                  isActive
+                    ? 'bg-[#9CFF63] border-[#9CFF63] text-[#2d2d2d]'
+                    : 'bg-transparent border-[#8d8d8d] text-[#8d8d8d]'
+                }`}
+              >
+                {isCheck ? '✓' : step}
+              </div>
+
+              {index < steps.length - 1 && (
+                <div className="flex gap-1">
+                  {[0, 1, 2].map((dot) => (
+                    <span
+                      key={dot}
+                      className={`w-[4px] h-[4px] rounded-full ${
+                        isConnectorActive ? 'bg-[#9CFF63]' : 'bg-[#8d8d8d]'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      <p className="mt-2 ml-[42px] text-[#9CFF63] text-[12px] font-bold">
+        {label}
+      </p>
+    </div>
+  )
+}
+
+function StatusCard({ selected, title, iconActive, iconInactive, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`h-[158px] rounded-[10px] flex flex-col items-center justify-center gap-4 font-black ${
+        selected ? 'bg-[#dcffdc] text-[#46d947]' : 'bg-white text-[#777]'
+      }`}
+    >
+      <img
+        src={selected ? iconActive : iconInactive}
+        alt=""
+        className="w-[74px] h-[58px] object-contain"
+      />
+      <span className="text-[15px] leading-tight text-center">{title}</span>
+    </button>
   )
 }
 
@@ -854,56 +1149,79 @@ function BarcodeAttachPage({ setPage, savedMaterial }) {
 
   return (
     <div className="relative w-full h-full bg-[#303030] text-white overflow-hidden">
-      <header className="absolute top-0 left-0 right-0 z-50 bg-[#303030] px-8 pt-8 pb-6">
+      <header className="absolute top-0 left-0 right-0 z-50 bg-[#303030] px-8 pt-7 pb-5">
         <div className="relative flex items-center justify-center">
           <button
             type="button"
-            onClick={() => setPage('savedInfo')}
-            className="absolute left-0 text-[#9cff5a] text-[34px] leading-none"
+            onClick={() => setPage('register')}
+            className="absolute left-0 text-[#9cff5a] text-[30px] leading-none"
           >
             ←
           </button>
 
-          <h1 className="text-[#9cff5a] text-[22px] font-black">
+          <h1 className="text-[#9cff5a] text-[18px] font-black">
             바코드 부착
           </h1>
         </div>
+
+        <StepIndicator currentStep={4} label="바코드 등록" />
       </header>
 
-      <div className="h-full overflow-y-auto overflow-x-hidden px-8 pt-[120px] pb-15 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        <div className="mx-auto w-[88%] rounded-[22px] bg-[#d8d8d8] overflow-hidden">
-          <img
-            src="/register-barcode-attach.png"
-            alt="바코드 부착 안내"
-            className="w-full h-auto block"
-          />
-        </div>
-
-        <section className="mt-7 mx-auto w-[88%] bg-white rounded-[22px] px-7 py-7 text-center text-black shadow-[0_12px_28px_rgba(0,0,0,0.18)]">
-          <p className="text-[18px] leading-[1.6] text-[#555] font-semibold">
-            아래 서랍에서 해당하는 번호의 바코드를
-            <br />
-            물건의 오른쪽 상단에 부착해주세요.
-          </p>
-
-          <p className="mt-5 text-[64px] leading-none font-black text-[#00864b]">
+      <div className="h-full overflow-y-auto overflow-x-hidden px-9 pt-[186px] pb-[118px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <section className="bg-white rounded-[10px] px-6 py-5 text-center text-black">
+          <p className="text-[52px] leading-none font-black text-[#00864b]">
             {barcode}
           </p>
-
-          <p className="mt-7 text-[14px] leading-[1.5] text-[#999]">
-            *스프레이 등 원기둥 형태의 물건은 
-            평평한 곳에 부착해 주세요
+          <p className="mt-2 text-[14px] text-[#555] font-medium">
+            해당하는 번호의 바코드를 붙여주세요
           </p>
         </section>
 
+        <div className="mt-5 grid grid-cols-[1fr_0.62fr] gap-4">
+          <section className="h-[192px] rounded-[8px] bg-[#c9c9c9] text-black px-4 py-4 overflow-hidden flex flex-col">
+            <h2 className="text-center text-[13px] font-black shrink-0">
+              바코드가 어디에 있나요?
+            </h2>
+
+            <img
+              src="/barcode-guide-box.png"
+              alt="바코드 위치 안내"
+              className="mt-2 w-full h-[105px] object-contain shrink-0"
+            />
+
+            <div className="mt-auto grid grid-cols-2 gap-3 text-[11px] leading-tight text-center font-bold">
+              <p>보관함에서 {barcode}번<br />바코드를 찾으세요.</p>
+              <p>재료 오른쪽 상단에<br />붙여주세요.</p>
+            </div>
+          </section>
+
+          <section className="h-[192px] rounded-[8px] bg-[#c9c9c9] text-black px-4 py-4 overflow-hidden flex flex-col">
+            <h2 className="text-center text-[13px] font-black shrink-0">
+              둥근 재료라면?
+            </h2>
+
+            <img
+              src="/barcode-guide-round.png"
+              alt="둥근 재료 바코드 부착 안내"
+              className="mt-2 w-full h-[105px] object-contain shrink-0"
+            />
+
+            <p className="mt-auto text-[11px] leading-tight text-center font-bold">
+              원기둥 재료는 평평한<br />면에 붙여주세요.
+            </p>
+          </section>
+        </div>
+      </div>
+
+      <footer className="absolute bottom-0 left-0 right-0 z-50 bg-[#303030] px-8 pb-10 pt-4">
         <button
           type="button"
           onClick={() => setPage('scan')}
-          className="mt-10 w-full h-[64px] rounded-full bg-[#9cff5a] text-black text-[22px] font-black shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
+          className="w-full h-[58px] rounded-full border-2 border-[#9cff5a] text-[#9cff5a] text-[20px] font-black"
         >
-          다음 단계
+          부착 완료
         </button>
-      </div>
+      </footer>
     </div>
   )
 }
@@ -1164,7 +1482,7 @@ function FinalPage({ setPage, savedMaterial }) {
 
         <button
           type="button"
-          onClick={() => setPage('registerGuide')}
+          onClick={() => setPage('register')}
           className="mt-4 w-full h-[60px] rounded-full bg-white text-black text-[21px] font-black"
         >
           재료 하나 더 등록
