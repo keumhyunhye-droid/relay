@@ -68,10 +68,8 @@ function getAvailableZone(type, materials) {
   return availableZones[randomIndex]
 }
 
-function getBarcodeNumber(materials) {
-  const used = materials
-    .map((item) => item.barcode)
-    .filter((num) => typeof num === 'number')
+function getBarcodeNumber(issuedBarcodes) {
+  const used = issuedBarcodes.filter((num) => typeof num === 'number')
 
   const available = Array.from({ length: 51 }, (_, i) => i).filter(
     (num) => !used.includes(num)
@@ -85,13 +83,32 @@ function getBarcodeNumber(materials) {
 
 export default function App() {
   const [page, setPage] = useState('home')
+
   const [materials, setMaterials] = useState(() => {
     const saved = localStorage.getItem('materials')
-  
+
     return saved
       ? JSON.parse(saved)
       : initialMaterials
   })
+
+  const [issuedBarcodes, setIssuedBarcodes] = useState(() => {
+    const savedIssued = localStorage.getItem('issuedBarcodes')
+    const savedMaterials = localStorage.getItem('materials')
+
+    const parsedMaterials = savedMaterials
+      ? JSON.parse(savedMaterials)
+      : initialMaterials
+
+    const materialBarcodes = parsedMaterials
+      .map((item) => item.barcode)
+      .filter((num) => typeof num === 'number')
+
+    const parsedIssued = savedIssued ? JSON.parse(savedIssued) : []
+
+    return Array.from(new Set([...parsedIssued, ...materialBarcodes]))
+  })
+
   const [selectedCategory, setSelectedCategory] = useState('전체')
   const [selectedZone, setSelectedZone] = useState('전체 구역')
   const [savedMaterial, setSavedMaterial] = useState(null)
@@ -129,6 +146,10 @@ export default function App() {
     )
   }, [materials])
 
+  useEffect(() => {
+    localStorage.setItem('issuedBarcodes', JSON.stringify(issuedBarcodes))
+  }, [issuedBarcodes])
+
   const handleWheel = (e) => {
     if (scrollRef.current) {
       e.preventDefault()
@@ -151,7 +172,12 @@ export default function App() {
       (zoneRules[assignedType] || zoneRules.default)[0] ||
       'A3'
 
-    const barcode = getBarcodeNumber(materials) ?? Math.floor(Math.random() * 51)
+      const barcode = getBarcodeNumber(issuedBarcodes)
+
+      if (barcode === null) {
+        alert('사용 가능한 바코드 번호가 없습니다.')
+        return
+      }
     const needsThickness = ['우드락/폼보드', '아이소핑크', '플라스틱/아크릴'].includes(assignedType)
     const thicknessName = assignedThickness === 20 ? '20t 이상' : `${assignedThickness}t`
     const autoName = needsThickness ? `${assignedType} ${thicknessName}` : assignedType
@@ -173,7 +199,8 @@ export default function App() {
     }
 
     setMaterials((prev) => [newMaterial, ...prev])
-    setSavedMaterial(newMaterial)
+setIssuedBarcodes((prev) => Array.from(new Set([...prev, barcode])))
+setSavedMaterial(newMaterial)
 
     setForm({
       name: '',
@@ -694,12 +721,17 @@ function RegisterPage({ setPage, form, setForm, handleSubmit }) {
       alert('재료 종류를 골라줘!')
       return
     }
-
+    
+    if (step === 3 && !form.description.trim()) {
+      alert('재료 상태를 입력해줘!')
+      return
+    }
+    
     if (step < 3) {
       setStep(step + 1)
       return
     }
-
+    
     handleSubmit()
   }
 
@@ -824,7 +856,7 @@ function RegisterPage({ setPage, form, setForm, handleSubmit }) {
           <textarea
             value={form.description}
             onChange={(e) => updateForm({ description: e.target.value })}
-            placeholder="두께, 사이즈 등 재료 상태를 간단히 설명해주세요. (선택 입력)"
+            placeholder="두께, 사이즈 등 재료 상태를 간단히 설명해주세요. (필수 입력)"
             className="mt-3 w-full h-[90px] rounded-[10px] bg-white px-4 py-4 text-[13px] text-black placeholder:text-[#c2c2c2] outline-none resize-none"
           />
         </section>
@@ -834,45 +866,62 @@ function RegisterPage({ setPage, form, setForm, handleSubmit }) {
 }
 
 function StatusCardGroup({ form, updateForm, iconType = 'board', compact = false }) {
-  const sprayIcon = materialIcons['스프레이/본드류']
-  const cards = [
+  const boardCards = [
     {
       value: '거의 새거예요',
       title: '거의 새거예요',
-      boardActive: '/icon-new-green.png',
-      boardInactive: '/icon-new-gray.png',
+      active: '/icon-new-green.png',
+      inactive: '/icon-new-gray.png',
     },
     {
       value: '조금 사용했어요',
       title: '조금 사용했어요',
-      boardActive: '/icon-used-green.png',
-      boardInactive: '/icon-used-gray.png',
+      active: '/icon-used-green.png',
+      inactive: '/icon-used-gray.png',
     },
     {
       value: '많이 사용했어요',
       title: '많이 사용했어요',
-      boardActive: '/icon-leftover-green.png',
-      boardInactive: '/icon-leftover-gray.png',
+      active: '/icon-leftover-green.png',
+      inactive: '/icon-leftover-gray.png',
     },
   ]
+
+  const sprayCards = [
+    {
+      value: '거의 새거예요',
+      title: '거의 새거예요',
+      active: '/spray-new-green.png',
+      inactive: '/spray-new-gray.png',
+    },
+    {
+      value: '조금 사용했어요',
+      title: '조금 사용했어요',
+      active: '/spray-used-green.png',
+      inactive: '/spray-used-gray.png',
+    },
+    {
+      value: '많이 사용했어요',
+      title: '많이 사용했어요',
+      active: '/spray-many-green.png',
+      inactive: '/spray-many-gray.png',
+    },
+  ]
+
+  const cards = iconType === 'spray' ? sprayCards : boardCards
 
   return (
     <div className={`mt-5 grid grid-cols-3 gap-3 ${compact ? '' : ''}`}>
       {cards.map((card) => {
         const selected = form.state === card.value
-        const iconSrc = iconType === 'spray'
-          ? sprayIcon
-          : selected
-          ? card.boardActive
-          : card.boardInactive
 
         return (
           <StatusCard
             key={card.value}
             selected={selected}
             title={card.title}
-            iconActive={iconSrc}
-            iconInactive={iconSrc}
+            iconActive={card.active}
+            iconInactive={card.inactive}
             onClick={() => updateForm({ state: card.value })}
           />
         )
@@ -993,6 +1042,16 @@ function RegisterStepLayout({ title, step, label, onBack, buttonText, onNext, ch
 function StepIndicator({ currentStep, label }) {
   const steps = [1, 2, 3, 4, 'check']
 
+  const labelCenterMap = {
+    1: 12,
+    2: 72,
+    3: 132,
+    4: 192,
+    5: 252,
+  }
+
+  const labelCenter = labelCenterMap[currentStep] ?? 132
+
   return (
     <div className="mt-5">
       <div className="flex items-center gap-2">
@@ -1030,7 +1089,13 @@ function StepIndicator({ currentStep, label }) {
         })}
       </div>
 
-      <p className="mt-2 ml-[42px] text-[#9CFF63] text-[12px] font-bold">
+      <p
+        className="mt-2 w-[80px] text-center text-[#9CFF63] text-[12px] font-bold"
+        style={{
+          marginLeft: `${labelCenter}px`,
+          transform: 'translateX(-50%)',
+        }}
+      >
         {label}
       </p>
     </div>
@@ -1649,10 +1714,11 @@ function DarkStorageMap({ zone }) {
 }
 function PickupScanPage({ setPage, material, handlePickupComplete }) {
   const [showConfirm, setShowConfirm] = useState(false)
-  const [showDone, setShowDone] = useState(false)
-  const [scanValue, setScanValue] = useState('')
-  const scanBuffer = useRef('')
-  const [showWrongBarcode, setShowWrongBarcode] = useState(false)
+const [showDone, setShowDone] = useState(false)
+const [scanValue, setScanValue] = useState('')
+const scanBuffer = useRef('')
+const [showWrongBarcode, setShowWrongBarcode] = useState(false)
+const [showHelp, setShowHelp] = useState(false)
 
   const item = material || {
     name: '아이소핑크 보드 A2',
@@ -1726,13 +1792,28 @@ function PickupScanPage({ setPage, material, handlePickupComplete }) {
           </span>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setShowConfirm(true)}
-          className="mt-auto mb-14 underline text-[18px] text-[#d9d9d9]"
-        >
-          테스트용으로 수령하기
-        </button>
+        <div className="relative mt-auto mb-14 flex flex-col items-center">
+  {showHelp && (
+    <div className="absolute bottom-[46px] left-1/2 -translate-x-1/2 w-[390px] rounded-[14px] bg-white text-black px-6 py-5 shadow-[0_12px_30px_rgba(0,0,0,0.28)]">
+      <p className="text-[15px] font-black">
+        스캔이 안되나요?
+      </p>
+
+      <p className="mt-4 text-[13px] leading-[1.7] text-[#777] font-medium">
+        만약 스캔이 안된다면 바코드를 살짝 떼어
+        평평하게 만든 후에 다시 찍어주세요.
+      </p>
+    </div>
+  )}
+
+  <button
+    type="button"
+    className="underline text-[18px] text-[#d9d9d9]"
+    onClick={() => setShowHelp((prev) => !prev)}
+  >
+    스캔이 안 되나요?
+  </button>
+</div>
       </main>
 
       {showWrongBarcode && (
